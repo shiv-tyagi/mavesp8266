@@ -66,6 +66,9 @@ const char* kDEBUG      = "debug";
 const char* kREBOOT     = "reboot";
 const char* kPOSITION   = "position";
 const char* kMODE       = "mode";
+const char* kCASTMODE   = "castmode";
+const char* kMCASTIP    = "mcastip";
+const char* kMCASTPORT  = "mcastport";
 
 const char* kFlashMaps[7] = {
     "512KB (256/256)",
@@ -325,6 +328,29 @@ static void handle_setup()
     message += "<input type='text' name='cport' value='";
     message += getWorld()->getParameters()->getWifiUdpCport();
     message += "'><br>";
+
+    message += "Casting Mode:&nbsp;";
+    message += "<input type='radio' name='castmode' value='0'";
+    if (getWorld()->getParameters()->getWifiCastMode() == CAST_MODE_UNI) {
+        message += " checked";
+    }
+    message += ">Unicast\n";
+    message += "<input type='radio' name='castmode' value='1'";
+    if (getWorld()->getParameters()->getWifiCastMode() == CAST_MODE_MULTI) {
+        message += " checked";
+    }
+    message += ">Multicast<br>\n";
+
+    message += "Multicast IP:&nbsp;";
+    message += "<input type='text' name='mcastip' value='";
+    IP = getWorld()->getParameters()->getWifiMcastIP();
+    message += IP.toString();
+    message += "'><br>";
+
+    message += "Multicast Port:&nbsp;";
+    message += "<input type='text' name='mcastport' value='";
+    message += getWorld()->getParameters()->getWifiMcastPort();
+    message += "'><br>";
     
     message += "Baudrate:&nbsp;";
     message += "<input type='text' name='baud' value='";
@@ -536,6 +562,19 @@ void handle_setParameters()
     if(webServer.hasArg(kREBOOT)) {
         ok = true;
         reboot = webServer.arg(kREBOOT) == "1";
+    }
+    if(webServer.hasArg(kCASTMODE)) {
+        ok = true;
+        getWorld()->getParameters()->setWifiCastMode(webServer.arg(kCASTMODE).toInt());
+    }
+    if(webServer.hasArg(kMCASTIP)) {
+        IPAddress ip;
+        ip.fromString(webServer.arg(kMCASTIP).c_str());
+        getWorld()->getParameters()->setWifiMcastIP(ip);
+    }
+    if(webServer.hasArg(kMCASTPORT)) {
+        ok = true;
+        getWorld()->getParameters()->setWifiMcastPort(webServer.arg(kMCASTPORT).toInt());
     }
     if(ok) {
         getWorld()->getParameters()->saveAllToEeprom();
