@@ -336,10 +336,15 @@ static void handle_setup()
     }
     message += ">Unicast\n";
     message += "<input type='radio' name='castmode' value='1'";
-    if (getWorld()->getParameters()->getWifiCastMode() == CAST_MODE_MULTI) {
+    if (getWorld()->getParameters()->getWifiCastMode() == CAST_MODE_FULL_MULTI) {
         message += " checked";
     }
-    message += ">Multicast<br>\n";
+    message += ">Full Multicast\n";
+    message += "<input type='radio' name='castmode' value='2'";
+    if (getWorld()->getParameters()->getWifiCastMode() == CAST_MODE_CONS_MULTI) {
+        message += " checked";
+    }
+    message += ">Conservative Multicast<br>\n";
 
     message += "Multicast IP:&nbsp;";
     message += "<input type='text' name='mcastip' value='";

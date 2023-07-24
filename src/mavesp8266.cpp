@@ -201,3 +201,24 @@ void MavESP8266Bridge::handle_non_mavlink(uint8_t b, bool msgReceived)
     }
     _last_parse_state = _rxstatus.parse_state;
 }
+
+/*
+    helper to check if a message is restricted to pass through the bridge
+*/
+bool MavESP8266Bridge::restricted_message(mavlink_message_t* message)
+{
+    if (getWorld()->getParameters()->getWifiCastMode() != CAST_MODE_CONS_MULTI) {
+        // restrict messages only in conservative multicast mode
+        return false;
+    }
+
+    // allowed messages
+    switch(message->msgid) {
+    case MAVLINK_MSG_ID_GLOBAL_POSITION_INT:
+    case MAVLINK_MSG_ID_FOLLOW_TARGET:
+        return false;
+    }
+
+    // restrict all other messages
+    return true;
+}

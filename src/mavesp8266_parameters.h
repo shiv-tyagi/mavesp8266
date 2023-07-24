@@ -42,7 +42,8 @@
 #define WIFI_MODE_STA 1
 
 #define CAST_MODE_UNI 0
-#define CAST_MODE_MULTI 1
+#define CAST_MODE_FULL_MULTI 1
+#define CAST_MODE_CONS_MULTI 2
 
 //-- Constants
 #define DEFAULT_WIFI_MODE       WIFI_MODE_AP

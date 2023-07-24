@@ -72,7 +72,9 @@ void
 MavESP8266Vehicle::readMessage()
 {
     if (_readMessage()) {
-        _forwardTo->sendMessage(&_msg);
+        if(!restricted_message(&_msg)) {
+            _forwardTo->sendMessage(&_msg);
+        }
     }
     //-- Update radio status (1Hz)
     if(_heard_from && (millis() - _last_status_time > 1000)) {

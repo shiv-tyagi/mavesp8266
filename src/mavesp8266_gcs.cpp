@@ -64,7 +64,7 @@ MavESP8266GCS::begin(MavESP8266Bridge* forwardTo, IPAddress gcsIP)
         _udp_port = getWorld()->getParameters()->getWifiUdpHport();
         _udp.begin(getWorld()->getParameters()->getWifiUdpCport());
         break;
-    case CAST_MODE_MULTI:
+    case CAST_MODE_FULL_MULTI ... CAST_MODE_CONS_MULTI:
         _ip = getWorld()->getParameters()->getWifiMcastIP();
         _udp_port = getWorld()->getParameters()->getWifiMcastPort();
         _udp.beginMulticast(WiFi.localIP(), _ip, _udp_port);
@@ -80,7 +80,9 @@ MavESP8266GCS::readMessage()
     //-- Read UDP
     if(_readMessage()) {
         //-- If we have a message, forward it
-        _forwardTo->sendMessage(&_message);
+        if(!restricted_message(&_message)) {
+            _forwardTo->sendMessage(&_message);
+        }
         memset(&_message, 0, sizeof(_message));
     }
     uint32_t now = millis();
@@ -240,7 +242,7 @@ MavESP8266GCS::sendMessageRaw(uint8_t *buffer, int len)
         _udp.beginPacket(_ip, _udp_port);
         break;
         
-    case CAST_MODE_MULTI:
+    case CAST_MODE_FULL_MULTI ... CAST_MODE_CONS_MULTI:
         _udp.beginPacketMulticast(_ip, _udp_port, WiFi.localIP());
         break;
     }
