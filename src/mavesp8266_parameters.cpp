@@ -65,6 +65,9 @@ uint32_t    _wifi_subnetsta;
 uint32_t    _uart_baud_rate;
 uint32_t    _flash_left;
 int8_t      _raw_enable;
+int8_t      _wifi_cast_mode;
+uint32_t    _wifi_mcast_ip;
+uint16_t    _wifi_mcast_port;
 
 //-- Parameters
 //   No string support in parameters so we stash a char[16] into 4 uint32_t
@@ -97,6 +100,9 @@ int8_t      _raw_enable;
      {"WIFI_SUBNET_STA",    &_wifi_subnetsta,       MavESP8266Parameters::ID_SUBNETSTA, sizeof(uint32_t),   MAV_PARAM_TYPE_UINT32,  false},
      {"UART_BAUDRATE",      &_uart_baud_rate,       MavESP8266Parameters::ID_UART,      sizeof(uint32_t),   MAV_PARAM_TYPE_UINT32,  false},
      {"RAW_ENABLE",         &_raw_enable,           MavESP8266Parameters::ID_RAW_ENABLE,sizeof(int8_t),     MAV_PARAM_TYPE_INT8,    false},
+     {"WIFI_CAST_MODE",     &_wifi_cast_mode,       MavESP8266Parameters::ID_CAST_MODE, sizeof(int8_t),     MAV_PARAM_TYPE_INT8,    false},
+     {"WIFI_MCAST_IP",      &_wifi_mcast_ip,        MavESP8266Parameters::ID_MCAST_IP,  sizeof(uint32_t),   MAV_PARAM_TYPE_UINT32,  false},
+     {"WIFI_MCAST_PORT",    &_wifi_mcast_port,      MavESP8266Parameters::ID_MCAST_PORT,sizeof(uint16_t),   MAV_PARAM_TYPE_UINT16,  false},
 };
 
 //---------------------------------------------------------------------------------
@@ -154,6 +160,9 @@ uint32_t    MavESP8266Parameters::getWifiStaGateway () { return _wifi_gatewaysta
 uint32_t    MavESP8266Parameters::getWifiStaSubnet  () { return _wifi_subnetsta;    }
 uint32_t    MavESP8266Parameters::getUartBaudRate   () { return _uart_baud_rate;    }
 int8_t      MavESP8266Parameters::getRawEnable      () { return _raw_enable;        }
+int8_t      MavESP8266Parameters::getWifiCastMode   () { return _wifi_cast_mode;    }
+uint32_t    MavESP8266Parameters::getWifiMcastIP    () { return _wifi_mcast_ip;     }
+uint16_t    MavESP8266Parameters::getWifiMcastPort  () { return _wifi_mcast_port;   }
 
 //---------------------------------------------------------------------------------
 //-- Reset all to defaults
@@ -170,6 +179,9 @@ MavESP8266Parameters::resetToDefaults()
     _wifi_ipsta        = 0;
     _wifi_gatewaysta   = 0;
     _wifi_subnetsta    = 0;
+    _wifi_cast_mode    = 0;
+    _wifi_mcast_ip     = DEFAULT_MCAST_IP;
+    _wifi_mcast_port   = DEFAULT_UDP_HPORT;
     strncpy(_wifi_ssid,         kDEFAULT_SSID,      sizeof(_wifi_ssid));
     strncpy(_wifi_password,     kDEFAULT_PASSWORD,  sizeof(_wifi_password));
     strncpy(_wifi_ssidsta,      kDEFAULT_SSID,      sizeof(_wifi_ssidsta));
@@ -411,4 +423,25 @@ void
 MavESP8266Parameters::setUartBaudRate(uint32_t baud)
 {
     _uart_baud_rate = baud;
+}
+
+//---------------------------------------------------------------------------------
+void
+MavESP8266Parameters::setWifiCastMode(int8_t enabled)
+{
+    _wifi_cast_mode = enabled;
+}
+
+//---------------------------------------------------------------------------------
+void
+MavESP8266Parameters::setWifiMcastIP(uint32_t ip)
+{
+    _wifi_mcast_ip = ip;
+}
+
+//---------------------------------------------------------------------------------
+void
+MavESP8266Parameters::setWifiMcastPort(uint16_t port)
+{
+    _wifi_mcast_port = port;
 }

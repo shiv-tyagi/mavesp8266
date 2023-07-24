@@ -55,11 +55,21 @@ void
 MavESP8266GCS::begin(MavESP8266Bridge* forwardTo, IPAddress gcsIP)
 {
     MavESP8266Bridge::begin(forwardTo);
-    _ip = gcsIP;
+
     //-- Init variables that shouldn't change unless we reboot
-    _udp_port = getWorld()->getParameters()->getWifiUdpHport();
     //-- Start UDP
-    _udp.begin(getWorld()->getParameters()->getWifiUdpCport());
+    switch(getWorld()->getParameters()->getWifiCastMode()) {
+    case CAST_MODE_UNI:
+        _ip = gcsIP;
+        _udp_port = getWorld()->getParameters()->getWifiUdpHport();
+        _udp.begin(getWorld()->getParameters()->getWifiUdpCport());
+        break;
+    case CAST_MODE_MULTI:
+        _ip = getWorld()->getParameters()->getWifiMcastIP();
+        _udp_port = getWorld()->getParameters()->getWifiMcastPort();
+        _udp.beginMulticast(WiFi.localIP(), _ip, _udp_port);
+        break;
+    }
 }
 
 //---------------------------------------------------------------------------------
@@ -120,48 +130,50 @@ MavESP8266GCS::_readMessage()
                 if(msgReceived) {
                     //-- We no longer need to broadcast
                     _status.packets_received++;
-                    if(_ip[3] == 255) {
-                        _ip = _udp.remoteIP();
-                        getWorld()->getLogger()->log("Response from GCS. Setting GCS IP to: %s\n", _ip.toString().c_str());
-                    }
-                    //-- First packets
-                    if(!_heard_from) {
-                        if(_message.msgid == MAVLINK_MSG_ID_HEARTBEAT) {
-                            //-- We no longer need DHCP
-                            if(getWorld()->getParameters()->getWifiMode() == WIFI_MODE_AP) {
-                                wifi_softap_dhcps_stop();
-                            }
-                            _heard_from      = true;
-                            _system_id       = _message.sysid;
-                            _component_id    = _message.compid;
-                            _seq_expected    = _message.seq + 1;
-                            _last_heartbeat  = millis();
+                    if(getWorld()->getParameters()->getWifiCastMode() == CAST_MODE_UNI) {
+                        if (_ip[3] == 255) {
+                            _ip = _udp.remoteIP();
+                            getWorld()->getLogger()->log("Response from GCS. Setting GCS IP to: %s\n", _ip.toString().c_str());
                         }
-                    } else {
-                        if(_message.msgid == MAVLINK_MSG_ID_HEARTBEAT)
-                            _last_heartbeat = millis();
-                        _checkLinkErrors(&_message);
-                    }
+                        //-- First packets
+                        if(!_heard_from) {
+                            if(_message.msgid == MAVLINK_MSG_ID_HEARTBEAT) {
+                                //-- We no longer need DHCP
+                                if(getWorld()->getParameters()->getWifiMode() == WIFI_MODE_AP) {
+                                    wifi_softap_dhcps_stop();
+                                }
+                                _heard_from      = true;
+                                _system_id       = _message.sysid;
+                                _component_id    = _message.compid;
+                                _seq_expected    = _message.seq + 1;
+                                _last_heartbeat  = millis();
+                            }
+                        } else {
+                            if(_message.msgid == MAVLINK_MSG_ID_HEARTBEAT)
+                                _last_heartbeat = millis();
+                            _checkLinkErrors(&_message);
+                        }
 
-                    if (msgReceived == MAVLINK_FRAMING_BAD_CRC) {
-                        // we don't process messages locally with bad CRC,
-                        // but we do forward them, so when new messages
-                        // are added we can bridge them
-                        break;
-                    }
+                        if (msgReceived == MAVLINK_FRAMING_BAD_CRC) {
+                            // we don't process messages locally with bad CRC,
+                            // but we do forward them, so when new messages
+                            // are added we can bridge them
+                            break;
+                        }
 
 #ifdef MAVLINK_FRAMING_BAD_SIGNATURE
-                    if (msgReceived == MAVLINK_FRAMING_BAD_SIGNATURE) {
-                        break;
-                    }
+                        if (msgReceived == MAVLINK_FRAMING_BAD_SIGNATURE) {
+                            break;
+                        }
 #endif
-                    
-                    //-- Check for message we might be interested
-                    if(getWorld()->getComponent()->handleMessage(this, &_message)){
-                        //-- Eat message (don't send it to FC)
-                        memset(&_message, 0, sizeof(_message));
-                        msgReceived = false;
-                        continue;
+                        
+                        //-- Check for message we might be interested
+                        if(getWorld()->getComponent()->handleMessage(this, &_message)){
+                            //-- Eat message (don't send it to FC)
+                            memset(&_message, 0, sizeof(_message));
+                            msgReceived = false;
+                            continue;
+                        }
                     }
 
 
@@ -171,7 +183,7 @@ MavESP8266GCS::_readMessage()
             }
         }
     }
-    if(!msgReceived) {
+    if(!msgReceived && getWorld()->getParameters()->getWifiCastMode() == CAST_MODE_UNI) {
         if(_heard_from && (millis() - _last_heartbeat) > HEARTBEAT_TIMEOUT) {
             //-- Restart DHCP and start broadcasting again
             if(getWorld()->getParameters()->getWifiMode() == WIFI_MODE_AP) {
@@ -223,6 +235,15 @@ MavESP8266GCS::sendMessage(mavlink_message_t* message) {
 int
 MavESP8266GCS::sendMessageRaw(uint8_t *buffer, int len)
 {
+    switch(getWorld()->getParameters()->getWifiCastMode()) {
+    case CAST_MODE_UNI:
+        _udp.beginPacket(_ip, _udp_port);
+        break;
+        
+    case CAST_MODE_MULTI:
+        _udp.beginPacketMulticast(_ip, _udp_port, WiFi.localIP());
+        break;
+    }
     _udp.beginPacket(_ip, _udp_port);
     size_t sent = _udp.write(buffer, len);
     _udp.endPacket();

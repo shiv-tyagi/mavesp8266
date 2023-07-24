@@ -41,12 +41,16 @@
 #define WIFI_MODE_AP 0
 #define WIFI_MODE_STA 1
 
+#define CAST_MODE_UNI 0
+#define CAST_MODE_MULTI 1
+
 //-- Constants
 #define DEFAULT_WIFI_MODE       WIFI_MODE_AP
 #define DEFAULT_UART_SPEED      921600
 #define DEFAULT_WIFI_CHANNEL    11
 #define DEFAULT_UDP_HPORT       14550
 #define DEFAULT_UDP_CPORT       14555
+#define DEFAULT_MCAST_IP        848429039
 
 struct stMavEspParameters {
     char        id[MAVLINK_MSG_PARAM_VALUE_FIELD_PARAM_ID_LEN];
@@ -90,7 +94,10 @@ public:
         ID_SUBNETSTA,
         ID_UART,
         ID_RAW_ENABLE,
-        ID_COUNT
+        ID_CAST_MODE,
+        ID_MCAST_IP,
+        ID_MCAST_PORT,
+        ID_COUNT,
     };
 
     void        begin                       ();
@@ -114,6 +121,9 @@ public:
     uint32_t    getWifiStaSubnet            ();
     uint32_t    getUartBaudRate             ();
     int8_t      getRawEnable                ();
+    int8_t      getWifiCastMode             ();
+    uint32_t    getWifiMcastIP              ();
+    uint16_t    getWifiMcastPort            ();
 
     void        setDebugEnabled             (int8_t enabled);
     void        setWifiMode                 (int8_t mode);
@@ -129,6 +139,9 @@ public:
     void        setWifiStaSubnet            (uint32_t addr);
     void        setUartBaudRate             (uint32_t baud);
     void        setLocalIPAddress           (uint32_t ipAddress);
+    void        setWifiCastMode             (int8_t mode);
+    void        setWifiMcastIP              (uint32_t ip);
+    void        setWifiMcastPort            (uint16_t port);
 
     stMavEspParameters* getAt               (int index);
 
